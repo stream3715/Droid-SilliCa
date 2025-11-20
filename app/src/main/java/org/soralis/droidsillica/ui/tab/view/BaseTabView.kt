@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import org.soralis.droidsillica.databinding.FragmentTabCloneBinding
 import org.soralis.droidsillica.databinding.FragmentTabHistoryBinding
 import org.soralis.droidsillica.databinding.FragmentTabManualBinding
 import org.soralis.droidsillica.databinding.FragmentTabReadBinding
@@ -50,4 +51,7 @@ fun FragmentTabManualBinding.toTabUiComponents(): TabUiComponents =
     TabUiComponents(tabTitle, tabDescription, actionList)
 
 fun FragmentTabHistoryBinding.toTabUiComponents(): TabUiComponents =
+    TabUiComponents(tabTitle, tabDescription, actionList)
+
+fun FragmentTabCloneBinding.toTabUiComponents(): TabUiComponents =
     TabUiComponents(tabTitle, tabDescription, actionList)

@@ -14,9 +14,11 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.Locale
 import org.soralis.droidsillica.R
+import org.soralis.droidsillica.controller.tab.CloneController
 import org.soralis.droidsillica.controller.tab.HistoryController
 import org.soralis.droidsillica.controller.tab.ReadController
 import org.soralis.droidsillica.controller.tab.WriteController
+import org.soralis.droidsillica.databinding.FragmentTabCloneBinding
 import org.soralis.droidsillica.databinding.FragmentTabHistoryBinding
 import org.soralis.droidsillica.databinding.FragmentTabManualBinding
 import org.soralis.droidsillica.databinding.FragmentTabReadBinding
@@ -24,6 +26,7 @@ import org.soralis.droidsillica.databinding.FragmentTabWriteBinding
 import org.soralis.droidsillica.model.TabContent
 import org.soralis.droidsillica.model.RawExchange
 import org.soralis.droidsillica.ui.tab.view.BaseTabView
+import org.soralis.droidsillica.ui.tab.view.CloneView
 import org.soralis.droidsillica.ui.tab.view.HistoryView
 import org.soralis.droidsillica.ui.tab.view.ManualView
 import org.soralis.droidsillica.ui.tab.view.ReadView
@@ -40,14 +43,17 @@ class TabFragment : Fragment() {
     private var _writeBinding: FragmentTabWriteBinding? = null
     private var _manualBinding: FragmentTabManualBinding? = null
     private var _historyBinding: FragmentTabHistoryBinding? = null
+    private var _cloneBinding: FragmentTabCloneBinding? = null
     private var tabView: TabView? = null
     private var readView: ReadView? = null
     private var writeView: WriteView? = null
     private var historyView: HistoryView? = null
+    private var cloneView: CloneView? = null
     private var expertModeEnabled: Boolean = false
     private val readController = ReadController()
     private val writeController = WriteController()
     private val historyController = HistoryController()
+    private val cloneController = CloneController()
     private var pendingReadRequest: ReadRequestMetadata? = null
     private var pendingWriteRequest: WriteController.WriteRequest? = null
     private var fullDumpState: FullDumpState? = null
@@ -85,6 +91,9 @@ class TabFragment : Fragment() {
             }.root
             KEY_HISTORY -> FragmentTabHistoryBinding.inflate(inflater, container, false).also {
                 _historyBinding = it
+            }.root
+            KEY_CLONE -> FragmentTabCloneBinding.inflate(inflater, container, false).also {
+                _cloneBinding = it
             }.root
             else -> FragmentTabWriteBinding.inflate(inflater, container, false).also {
                 _writeBinding = it
@@ -140,11 +149,14 @@ class TabFragment : Fragment() {
         _writeBinding = null
         _manualBinding = null
         _historyBinding = null
+        _cloneBinding = null
         readController.stopReading()
         readView = null
         writeController.stopWriting()
         writeView = null
         historyView = null
+        cloneController.stopCloning()
+        cloneView = null
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -162,6 +174,9 @@ class TabFragment : Fragment() {
         if (key != KEY_HISTORY) {
             historyView = null
         }
+        if (key != KEY_CLONE) {
+            cloneView = null
+        }
         return when (key) {
             KEY_READ -> ReadView(
                 _readBinding ?: error("Missing read binding"),
@@ -178,13 +193,48 @@ class TabFragment : Fragment() {
             ).also {
                 historyView = it
             }
+            KEY_CLONE -> CloneView(
+                _cloneBinding ?: error("Missing clone binding"),
+                onStartClone = {
+                    activity?.let { cloneController.startCloning(it, cloneListener) }
+                }
+            ).also { cloneView = it }
             else -> BaseTabView(
                 _writeBinding?.toTabUiComponents()
                     ?: _manualBinding?.toTabUiComponents()
                     ?: _historyBinding?.toTabUiComponents()
                     ?: _readBinding?.toTabUiComponents()
+                    ?: _cloneBinding?.toTabUiComponents()
                     ?: error("No binding available for $key tab")
             )
+        }
+    }
+
+    private val cloneListener = object : CloneController.Listener {
+        override fun onWaitingForTag() {
+            cloneView?.showWaiting()
+        }
+
+        override fun onCloneSuccess(result: CloneController.CloneResult) {
+            val sb = StringBuilder()
+            sb.append("IDm: ${result.formattedIdm}\n")
+            sb.append("PMm: ${result.formattedPmm}\n\n")
+            result.blocks.forEach { (serviceCode, data) ->
+                sb.append("Service ${String.format("%04X", serviceCode)}: ${data.toLegacyHexString()}\n")
+            }
+            cloneView?.showResult(sb.toString())
+        }
+
+        override fun onCloneError(message: String) {
+            cloneView?.showError(message)
+        }
+
+        override fun onCloningStopped() {
+            // cloneView?.showResult("Cloning stopped.")
+        }
+
+        override fun onNfcUnavailable() {
+            cloneView?.showNfcUnavailable()
         }
     }
 
@@ -610,6 +660,7 @@ class TabFragment : Fragment() {
         private const val KEY_WRITE = "write"
         private const val KEY_MANUAL = "manual"
         private const val KEY_HISTORY = "history"
+        private const val KEY_CLONE = "clone"
         private const val FELICA_BLOCK_SIZE = 16
         private const val FULL_DUMP_BLOCK_COUNT = 0xFF
         private val FULL_DUMP_BLOCKS = (0 until FULL_DUMP_BLOCK_COUNT).toList()

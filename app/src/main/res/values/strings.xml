@@ -107,4 +107,14 @@
     <string name="settings_mode_basic">Basic</string>
     <string name="settings_mode_expert">Expert</string>
     <string name="expert_mode_required">Enable expert mode to use this feature.</string>
+    <string name="clone_action_start">Start Cloning</string>
+    <string name="clone_action_stop">Stop</string>
+    <string name="clone_result_placeholder">Awaiting NFC tag...</string>
+    <string name="clone_result_starting">Scanning for FeliCa (0x8AC3)...\nPlease tap card.</string>
+    <string name="clone_result_stopped">Cloning stopped.</string>
+    <string name="clone_result_success">IDm: %1$s\nPMm: %2$s\nBlocks read:\n%3$s</string>
+    <string name="clone_result_error">Clone failed: %1$s</string>
+    <string name="clone_raw_log_label">Raw Log</string>
+    <string name="clone_raw_log_placeholder">No raw exchanges yet.</string>
+    <string name="clone_result_block_entry">Service %1$04X Block %2$d: %3$s</string>
 </resources>
